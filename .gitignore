@@ -44,3 +44,8 @@ shared/types/lexicons
 
 # output
 .vercel
+
+*storybook.log
+storybook-static
+
+.direnv
