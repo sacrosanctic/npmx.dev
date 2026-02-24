@@ -82,6 +82,26 @@ const { data: readmeData } = useLazyFetch<ReadmeResponse>(
   { default: () => ({ html: '', playgroundLinks: [] }) },
 )
 
+const { data: packageJson } = useLazyFetch<{ storybook?: { title: string; url: string } }>(() => {
+  const version = requestedVersion.value ?? 'latest'
+  return `https://cdn.jsdelivr.net/npm/${packageName.value}@${version}/package.json`
+})
+
+const playgroundLinks = computed(() => [
+  ...readmeData.value.playgroundLinks,
+  // Libraries with a storybook field in package.json contain a link to their deployed playground
+  ...(packageJson.value?.storybook
+    ? [
+        {
+          url: packageJson.value.storybook.url,
+          provider: 'storybook',
+          providerName: 'Storybook',
+          label: 'Storybook',
+        },
+      ]
+    : []),
+])
+
 // Check if package exists on JSR (only for scoped packages)
 const { data: jsrInfo } = useLazyFetch<JsrPackageInfo>(() => `/api/jsr/${packageName.value}`, {
   default: () => ({ exists: false }),
@@ -908,10 +928,7 @@ defineOgImageComponent('Package', {
           <PackageDownloadStats :downloads="weeklyDownloads" />
 
           <!-- Playground links -->
-          <PackagePlaygrounds
-            v-if="readmeData?.playgroundLinks?.length"
-            :links="readmeData.playgroundLinks"
-          />
+          <PackagePlaygrounds v-if="playgroundLinks.length" :links="playgroundLinks" />
 
           <section
             v-if="
